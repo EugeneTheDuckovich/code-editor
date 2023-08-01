@@ -3,6 +3,11 @@ using System.Linq;
 
 namespace CodeEditor.ViewModels.Abstract;
 
+public enum ViewType
+{
+    CodePage,
+}
+
 public class PageViewModel
 {
     private Action<ViewType> _viewChanged;
@@ -16,9 +21,4 @@ public class PageViewModel
                 _viewChanged -= value;
         }
     }
-}
-
-public enum ViewType
-{
-    CodePage,
 }

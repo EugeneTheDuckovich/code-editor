@@ -1,5 +1,5 @@
 ﻿using System.Windows;
-using CodeEditor.Helpers;
+using CodeEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,7 +15,7 @@ public partial class App : Application
     public App()
     {
         _host = Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>services.ConfigureServices())
+            .ConfigureServices(ConfigureServices)
             .Build();
     }
     
@@ -32,5 +32,11 @@ public partial class App : Application
         await _host!.StopAsync();
         _host.Dispose();
         base.OnExit(e);
+    }
+
+    private void ConfigureServices(IServiceCollection services)
+    {
+        services.AddTransient<MainWindowViewModel>();
+        services.AddSingleton<MainWindow>();
     }
 }
