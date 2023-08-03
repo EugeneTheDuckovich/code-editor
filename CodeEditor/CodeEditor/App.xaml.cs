@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using CodeEditor.Services;
+using CodeEditor.Services.Abstract;
 using CodeEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +38,7 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
+        services.AddTransient<ICodeExecutionService, CodeExecutionService>();
         services.AddTransient<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
     }

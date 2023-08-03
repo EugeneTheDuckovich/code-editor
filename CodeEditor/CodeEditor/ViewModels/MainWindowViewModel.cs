@@ -1,12 +1,13 @@
 using System;
-using System.Windows.Controls;
 using CodeEditor.Mvvm;
+using CodeEditor.Services.Abstract;
 using CodeEditor.ViewModels.Abstract;
 
 namespace CodeEditor.ViewModels;
 
 public class MainWindowViewModel : NotifyPropertyChanged
 {
+    private readonly ICodeExecutionService _codeExecutionService;
     private PageViewModel _currentViewModel;
 
     public PageViewModel CurrentViewModel
@@ -19,20 +20,23 @@ public class MainWindowViewModel : NotifyPropertyChanged
         }
     }
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(ICodeExecutionService codeExecutionService)
     {
+        _codeExecutionService = codeExecutionService;
         ChangeView(ViewType.CodePage);
     }
 
-    private void ChangeView(ViewType nextView)
+    private void ChangeView(ViewType viewType)
     {
-        switch (nextView)
+        switch (viewType)
         {
             case ViewType.CodePage:
-                CurrentViewModel = new CodePageViewModel();
+                CurrentViewModel = new CodePageViewModel(_codeExecutionService);
                 break;
             default:
-                throw new ArgumentException("invalid view!");
+                throw new ArgumentException("invalid view type!");
         }
+
+        CurrentViewModel.ViewChanged += ChangeView;
     }
 }

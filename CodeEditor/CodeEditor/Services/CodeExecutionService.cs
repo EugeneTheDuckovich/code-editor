@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -26,12 +27,23 @@ public class CodeExecutionService : ICodeExecutionService
     
     public async Task<ExecutionStatusResponse> StartExecution(ExecuteCodeRequest request)
     {
-        var content = new StringContent(JsonConvert.SerializeObject(request),
-            Encoding.UTF8,"application/json");
-        content.Headers.Add("client-secret",ApiKey);
+        string jsonRequest = JsonConvert.SerializeObject(request);
+        var httpMessage = new HttpRequestMessage()
+        {
+            RequestUri = new Uri(ApiUrl),
+            Headers =
+            {
+                {"client-secret",ApiKey},
+            },
+            Method = HttpMethod.Post,
+            Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json"),
+        };
+        //var content = new StringContent(jsonRequest,
+        //    Encoding.UTF8,"application/json");
         
         var httpClient = new HttpClient();
-        HttpResponseMessage responseMessage = await httpClient.PostAsync(ApiUrl,content);
+        //httpClient.DefaultRequestHeaders.Add("client-secret",ApiKey);
+        HttpResponseMessage responseMessage = await httpClient.SendAsync(httpMessage);
         string responseJson = await responseMessage.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<ExecutionStatusResponse>(responseJson)??
                throw new Exception("invalid response!");
@@ -40,6 +52,7 @@ public class CodeExecutionService : ICodeExecutionService
     public async Task<ExecutionStatusResponse> UpdateExecutionStatus(ExecutionStatusResponse response)
     {
         var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("client-secret",ApiKey);
         HttpResponseMessage updatedStatusMessage = await httpClient.GetAsync(response.StatusUpdateUrl);
         string responseJson = await updatedStatusMessage.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<ExecutionStatusResponse>(responseJson)??

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using CodeEditor.Mvvm;
 
 namespace CodeEditor.ViewModels.Abstract;
 
@@ -8,7 +9,7 @@ public enum ViewType
     CodePage,
 }
 
-public class PageViewModel
+public class PageViewModel : NotifyPropertyChanged
 {
     private Action<ViewType> _viewChanged;
     
