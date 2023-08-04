@@ -1,15 +1,11 @@
 using System;
-using System.IO;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
 using System.Threading.Tasks;
 using CodeEditor.Models.Requests;
 using CodeEditor.Models.Responses;
 using CodeEditor.Services.Abstract;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using ConfigurationManager = System.Configuration.ConfigurationManager;
+using System.Configuration;
 
 namespace CodeEditor.Services;
 
@@ -28,22 +24,13 @@ public class CodeExecutionService : ICodeExecutionService
     public async Task<ExecutionStatusResponse> StartExecution(ExecuteCodeRequest request)
     {
         string jsonRequest = JsonConvert.SerializeObject(request);
-        var httpMessage = new HttpRequestMessage()
-        {
-            RequestUri = new Uri(ApiUrl),
-            Headers =
-            {
-                {"client-secret",ApiKey},
-            },
-            Method = HttpMethod.Post,
-            Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json"),
-        };
-        //var content = new StringContent(jsonRequest,
-        //    Encoding.UTF8,"application/json");
+        var content = new StringContent(jsonRequest);
+        content.Headers.Clear();
+        content.Headers.Add("content-type", "application/json");
+        content.Headers.Add("client-secret", ApiKey);
         
         var httpClient = new HttpClient();
-        //httpClient.DefaultRequestHeaders.Add("client-secret",ApiKey);
-        HttpResponseMessage responseMessage = await httpClient.SendAsync(httpMessage);
+        HttpResponseMessage responseMessage = await httpClient.PostAsync(ApiUrl,content);
         string responseJson = await responseMessage.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<ExecutionStatusResponse>(responseJson)??
                throw new Exception("invalid response!");

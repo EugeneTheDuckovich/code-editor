@@ -115,7 +115,7 @@ public class CodePageViewModel : PageViewModel
 
     private async void UpdateStatus(ExecutionStatusResponse response)
     {
-        bool isCompleted = true;
+        bool isCompleted = false;
         while (!isCompleted)
         {
             await Task.Delay(100);
@@ -133,6 +133,6 @@ public class CodePageViewModel : PageViewModel
         string? outputPath = response.Result?.RunStatus?.OutputPath;
         if(!string.IsNullOrEmpty(outputPath))
             Output = await httpClient.GetStringAsync(outputPath);
-        CompilationStatus = response.Result.CompileStatus ?? string.Empty;
+        CompilationStatus = response.Result?.CompileStatus ?? string.Empty;
     }
 }
