@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CodeEditor.Contracts;
+using CodeEditor.Contracts.Abstract;
 using CodeEditor.Models.Requests;
 using CodeEditor.Models.Responses;
 using CodeEditor.Services.Abstract;
@@ -18,11 +19,11 @@ namespace CodeEditor.ViewModels;
 public class CodePageViewModel : PageViewModel
 {
     private readonly ICodeExecutionService _codeExecutionService;
+    private readonly ILanguageDictionary _languageDictionary;
     private string _code;
     private int _memoryLimitKb;
     private int _timeLimitSeconds;
     private string _selectedLanguage;
-    private string _compilationStatus;
     private string _output;
 
     public string Code
@@ -34,17 +35,6 @@ public class CodePageViewModel : PageViewModel
             OnPropertyChanged();
         }
     }
-
-    public string CompilationStatus
-    {
-        get => _compilationStatus;
-        set
-        {
-            _compilationStatus = value;
-            OnPropertyChanged();
-        }
-    }
-
     public string Output
     {
         get => _output;
@@ -85,30 +75,35 @@ public class CodePageViewModel : PageViewModel
         }
     }
     
-    public IEnumerable<string> Languages => LanguageDictionary.Languages.Keys;
+    public IEnumerable<string> Languages => _languageDictionary.Languages.Keys;
 
     public ICommand ExecuteCodeCommand { get; }
 
-    public CodePageViewModel(ICodeExecutionService codeExecutionService)
+    public CodePageViewModel(ICodeExecutionService codeExecutionService, ILanguageDictionary languageDictionary)
     {
         _codeExecutionService = codeExecutionService;
+        _languageDictionary = languageDictionary;
         
-        Code = Output = CompilationStatus = String.Empty;
-        MemoryLimitKb = TimeLimitSeconds = 0;
+        Code = Output =  String.Empty;
+        MemoryLimitKb = 262144;
+        TimeLimitSeconds = 5;
         
         ExecuteCodeCommand = new RelayCommand(ExecuteCode);
     }
 
     private async void ExecuteCode()
     {
+        if (string.IsNullOrEmpty(Code)) return;
+        
         var request = new ExecuteCodeRequest
         {
             SourceCode = Code,
-            Language = LanguageDictionary.Languages[SelectedLanguage],
-            MemoryLimitKb = 262144,
-            TimeLimitSeconds = 5
+            Language = _languageDictionary.Languages[SelectedLanguage],
+            MemoryLimitKb = _memoryLimitKb < 1 ? 1 : _memoryLimitKb,
+            TimeLimitSeconds =  _timeLimitSeconds < 1 ? 1 : _timeLimitSeconds,
         };
         ExecutionStatusResponse response = await _codeExecutionService.StartExecution(request);
+        
         InitializeStatus(response);
         UpdateStatus(response);
     }
@@ -122,8 +117,9 @@ public class CodePageViewModel : PageViewModel
             response = await _codeExecutionService.UpdateExecutionStatus(response);
             
             isCompleted = response.ReguestStatus.Code is RequestStatusCode.REQUEST_COMPLETED 
-                or RequestStatusCode.REQUEST_FAILED;
-            InitializeStatus(response);
+                or RequestStatusCode.REQUEST_FAILED
+                || response.Result.CompileStatus.ToLower().Contains("error");
+            InitializeStatus(response);                                       
         }
     }
 
@@ -131,8 +127,8 @@ public class CodePageViewModel : PageViewModel
     {
         var httpClient = new HttpClient();
         string? outputPath = response.Result?.RunStatus?.OutputPath;
-        if(!string.IsNullOrEmpty(outputPath))
-            Output = await httpClient.GetStringAsync(outputPath);
-        CompilationStatus = response.Result?.CompileStatus ?? string.Empty;
+        string compilationStatus = $"Compilation status: {response.Result?.CompileStatus ?? string.Empty}\r\n";
+        string output = string.IsNullOrEmpty(outputPath) ? string.Empty: await httpClient.GetStringAsync(outputPath);
+        Output = compilationStatus + output;
     }
 }

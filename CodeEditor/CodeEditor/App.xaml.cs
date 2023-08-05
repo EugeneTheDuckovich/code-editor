@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using CodeEditor.Contracts;
+using CodeEditor.Contracts.Abstract;
 using CodeEditor.Services;
 using CodeEditor.Services.Abstract;
 using CodeEditor.ViewModels;
@@ -39,6 +41,7 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddTransient<ICodeExecutionService, CodeExecutionService>();
+        services.AddTransient<ILanguageDictionary, LanguageDictionary>();
         services.AddTransient<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
     }
